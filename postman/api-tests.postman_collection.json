@@ -1,0 +1,103 @@
+{
+  "info": {
+    "name": "Plan de Pruebas - Integracion API (JSONPlaceholder + Restful-Booker)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "jp", "value": "https://jsonplaceholder.typicode.com" },
+    { "key": "rb", "value": "https://restful-booker.herokuapp.com" }
+  ],
+  "item": [
+    {
+      "name": "IT-01 GET /posts/1 devuelve el recurso",
+      "request": { "method": "GET", "url": "{{jp}}/posts/1" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Tiene id=1 y userId', () => { const j = pm.response.json(); pm.expect(j.id).to.eql(1); pm.expect(j).to.have.property('userId'); });",
+        "pm.test('Responde en menos de 1500 ms', () => pm.expect(pm.response.responseTime).to.be.below(1500));"
+      ]}}]
+    },
+    {
+      "name": "IT-02 GET /posts devuelve lista de 100",
+      "request": { "method": "GET", "url": "{{jp}}/posts" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Lista de 100 elementos', () => pm.expect(pm.response.json()).to.have.lengthOf(100));"
+      ]}}]
+    },
+    {
+      "name": "IT-03 POST /posts crea recurso",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"title\":\"Solicitud de servicio\",\"body\":\"Fuga en cocina\",\"userId\":1}" },
+        "url": "{{jp}}/posts" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 201', () => pm.response.to.have.status(201));",
+        "pm.test('Devuelve id nuevo y titulo enviado', () => { const j = pm.response.json(); pm.expect(j.id).to.be.a('number'); pm.expect(j.title).to.eql('Solicitud de servicio'); });"
+      ]}}]
+    },
+    {
+      "name": "IT-04 PUT /posts/1 actualiza recurso",
+      "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"id\":1,\"title\":\"Titulo editado\",\"body\":\"Contenido editado\",\"userId\":1}" },
+        "url": "{{jp}}/posts/1" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Titulo actualizado', () => pm.expect(pm.response.json().title).to.eql('Titulo editado'));"
+      ]}}]
+    },
+    {
+      "name": "IT-05 DELETE /posts/1 elimina recurso",
+      "request": { "method": "DELETE", "url": "{{jp}}/posts/1" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));"
+      ]}}]
+    },
+    {
+      "name": "IT-06 GET /posts/99999 recurso inexistente",
+      "request": { "method": "GET", "url": "{{jp}}/posts/99999" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 404', () => pm.response.to.have.status(404));"
+      ]}}]
+    },
+    {
+      "name": "IT-07 Restful-Booker: login correcto devuelve token",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"password123\"}" },
+        "url": "{{rb}}/auth" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Devuelve token', () => pm.expect(pm.response.json()).to.have.property('token'));",
+        "pm.collectionVariables.set('token', pm.response.json().token);"
+      ]}}]
+    },
+    {
+      "name": "IT-08 Restful-Booker: login con clave incorrecta no entrega token",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"username\":\"admin\",\"password\":\"incorrecta\"}" },
+        "url": "{{rb}}/auth" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('No devuelve token', () => pm.expect(pm.response.json()).to.not.have.property('token'));",
+        "pm.test('Mensaje Bad credentials', () => pm.expect(pm.response.json().reason).to.eql('Bad credentials'));"
+      ]}}]
+    },
+    {
+      "name": "IT-09 Restful-Booker: crear reserva",
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Accept", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\"firstname\":\"Jovan\",\"lastname\":\"Oquendo\",\"totalprice\":120000,\"depositpaid\":true,\"bookingdates\":{\"checkin\":\"2026-12-01\",\"checkout\":\"2026-12-05\"},\"additionalneeds\":\"Ninguna\"}" },
+        "url": "{{rb}}/booking" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Reserva con id y datos enviados', () => { const j = pm.response.json(); pm.expect(j.bookingid).to.be.a('number'); pm.expect(j.booking.firstname).to.eql('Jovan'); });",
+        "pm.collectionVariables.set('bookingid', pm.response.json().bookingid);"
+      ]}}]
+    },
+    {
+      "name": "IT-10 Restful-Booker: consultar la reserva creada",
+      "request": { "method": "GET", "header": [{ "key": "Accept", "value": "application/json" }], "url": "{{rb}}/booking/{{bookingid}}" },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "pm.test('Status 200', () => pm.response.to.have.status(200));",
+        "pm.test('Apellido Oquendo', () => pm.expect(pm.response.json().lastname).to.eql('Oquendo'));"
+      ]}}]
+    }
+  ]
+}
